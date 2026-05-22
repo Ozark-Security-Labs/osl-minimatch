@@ -2,8 +2,6 @@ import { expand } from 'brace-expansion'
 import { assertValidPattern } from './assert-valid-pattern.js'
 import type { ExtglobType } from './ast.js'
 import { AST } from './ast.js'
-import { escape } from './escape.js'
-import { unescape } from './unescape.js'
 
 export type Platform =
   | 'aix'
@@ -120,20 +118,6 @@ export interface MinimatchOptions {
   maxExtglobRecursion?: number
 }
 
-export const minimatch = (
-  p: string,
-  pattern: string,
-  options: MinimatchOptions = {},
-) => {
-  assertValidPattern(pattern)
-
-  // shortcut: comments match nothing.
-  if (!options.nocomment && pattern.charAt(0) === '#') {
-    return false
-  }
-
-  return new Minimatch(pattern, options).match(p)
-}
 
 // Optimized checking for the most common glob patterns.
 const starDotExtRE = /^\*+([^+@!?*[(]*)$/
@@ -209,10 +193,8 @@ const path: { [k: string]: { sep: Sep } } = {
 
 export const sep =
   defaultPlatform === 'win32' ? path.win32.sep : path.posix.sep
-minimatch.sep = sep
 
 export const GLOBSTAR = Symbol('globstar **')
-minimatch.GLOBSTAR = GLOBSTAR
 
 // any single thing other than /
 // don't need to escape / when using new RegExp()
@@ -230,90 +212,10 @@ const twoStarDot = '(?:(?!(?:\\/|^)(?:\\.{1,2})($|\\/)).)*?'
 // followed by anything, any number of times.
 const twoStarNoDot = '(?:(?!(?:\\/|^)\\.).)*?'
 
-export const filter =
-  (pattern: string, options: MinimatchOptions = {}) =>
-  (p: string) =>
-    minimatch(p, pattern, options)
-minimatch.filter = filter
 
 const ext = (a: MinimatchOptions, b: MinimatchOptions = {}) =>
   Object.assign({}, a, b)
 
-export const defaults = (def: MinimatchOptions): typeof minimatch => {
-  if (!def || typeof def !== 'object' || !Object.keys(def).length) {
-    return minimatch
-  }
-
-  const orig = minimatch
-
-  const m = (p: string, pattern: string, options: MinimatchOptions = {}) =>
-    orig(p, pattern, ext(def, options))
-
-  return Object.assign(m, {
-    Minimatch: class Minimatch extends orig.Minimatch {
-      constructor(pattern: string, options: MinimatchOptions = {}) {
-        super(pattern, ext(def, options))
-      }
-      static defaults(options: MinimatchOptions) {
-        return orig.defaults(ext(def, options)).Minimatch
-      }
-    },
-
-    AST: class AST extends orig.AST {
-      /* c8 ignore start */
-      constructor(
-        type: ExtglobType | null,
-        parent?: AST,
-        options: MinimatchOptions = {},
-      ) {
-        super(type, parent, ext(def, options))
-      }
-      /* c8 ignore stop */
-
-      static fromGlob(pattern: string, options: MinimatchOptions = {}) {
-        return orig.AST.fromGlob(pattern, ext(def, options))
-      }
-    },
-
-    unescape: (
-      s: string,
-      options: Pick<
-        MinimatchOptions,
-        'windowsPathsNoEscape' | 'magicalBraces'
-      > = {},
-    ) => orig.unescape(s, ext(def, options)),
-
-    escape: (
-      s: string,
-      options: Pick<
-        MinimatchOptions,
-        'windowsPathsNoEscape' | 'magicalBraces'
-      > = {},
-    ) => orig.escape(s, ext(def, options)),
-
-    filter: (pattern: string, options: MinimatchOptions = {}) =>
-      orig.filter(pattern, ext(def, options)),
-
-    defaults: (options: MinimatchOptions) =>
-      orig.defaults(ext(def, options)),
-
-    makeRe: (pattern: string, options: MinimatchOptions = {}) =>
-      orig.makeRe(pattern, ext(def, options)),
-
-    braceExpand: (pattern: string, options: MinimatchOptions = {}) =>
-      orig.braceExpand(pattern, ext(def, options)),
-
-    match: (
-      list: string[],
-      pattern: string,
-      options: MinimatchOptions = {},
-    ) => orig.match(list, pattern, ext(def, options)),
-
-    sep: orig.sep,
-    GLOBSTAR: GLOBSTAR as typeof GLOBSTAR,
-  })
-}
-minimatch.defaults = defaults
 
 // Brace expansion:
 // a{b,c}d -> abd acd
@@ -325,7 +227,7 @@ minimatch.defaults = defaults
 // Invalid sets are not expanded.
 // a{2..}b -> a{2..}b
 // a{b}c -> a{b}c
-export const braceExpand = (
+const braceExpand = (
   pattern: string,
   options: MinimatchOptions = {},
 ) => {
@@ -340,7 +242,6 @@ export const braceExpand = (
 
   return expand(pattern, { max: options.braceExpandMax })
 }
-minimatch.braceExpand = braceExpand
 
 // parse a component of the expanded set.
 // At this point, no pattern may contain "/" in it
@@ -354,23 +255,7 @@ minimatch.braceExpand = braceExpand
 // of * is equivalent to a single *.  Globstar behavior is enabled by
 // default, and can be disabled by setting options.noglobstar.
 
-export const makeRe = (pattern: string, options: MinimatchOptions = {}) =>
-  new Minimatch(pattern, options).makeRe()
-minimatch.makeRe = makeRe
 
-export const match = (
-  list: string[],
-  pattern: string,
-  options: MinimatchOptions = {},
-) => {
-  const mm = new Minimatch(pattern, options)
-  list = list.filter(f => mm.match(f))
-  if (mm.options.nonull && !list.length) {
-    list.push(pattern)
-  }
-  return list
-}
-minimatch.match = match
 
 // replace stuff like \* with *
 const globMagic = /[?*]|[+@!]\(.*?\)|\[|\]/
@@ -1470,16 +1355,4 @@ export class Minimatch {
     return this.negate
   }
 
-  static defaults(def: MinimatchOptions) {
-    return minimatch.defaults(def).Minimatch
-  }
 }
-/* c8 ignore start */
-export { AST } from './ast.js'
-export { escape } from './escape.js'
-export { unescape } from './unescape.js'
-/* c8 ignore stop */
-minimatch.AST = AST
-minimatch.Minimatch = Minimatch
-minimatch.escape = escape
-minimatch.unescape = unescape
