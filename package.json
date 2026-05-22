@@ -1,11 +1,11 @@
 {
   "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me)",
-  "name": "minimatch",
-  "description": "a glob matcher in javascript",
-  "version": "10.2.5",
+  "name": "osl-minimatch",
+  "description": "Ozark Security Labs internal fork of minimatch — trimmed for use by Ozark products. See OZARK-NOTES.md.",
+  "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "git@github.com:isaacs/minimatch"
+    "url": "https://github.com/Ozark-Security-Labs/osl-minimatch.git"
   },
   "main": "./dist/commonjs/index.js",
   "types": "./dist/commonjs/index.d.ts",
@@ -27,8 +27,6 @@
   ],
   "scripts": {
     "preversion": "npm test",
-    "postversion": "npm publish",
-    "prepublishOnly": "git push origin --follow-tags",
     "prepare": "tshy",
     "pretest": "npm run prepare",
     "presnap": "npm run prepare",

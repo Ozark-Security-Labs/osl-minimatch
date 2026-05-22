@@ -1,3 +1,10 @@
+> **Ozark Security Labs internal fork.**
+> This is a trimmed fork of [`isaacs/minimatch`](https://github.com/isaacs/minimatch) maintained for the Ozark product line. It is not published to npm; consumers install via git URL pinned to a commit SHA. CVEs and bugs are patched directly here rather than syncing upstream wholesale. See [`OZARK-NOTES.md`](OZARK-NOTES.md), [`CHANGELOG-OZARK.md`](CHANGELOG-OZARK.md), and [`LICENSE-UPSTREAM`](LICENSE-UPSTREAM). Org-wide context: [Ozark-Security-Labs/.github](https://github.com/Ozark-Security-Labs/.github).
+>
+> Upstream README follows.
+
+---
+
 # minimatch
 
 A minimal matching utility.
